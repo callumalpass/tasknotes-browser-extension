@@ -1,5 +1,7 @@
 # TaskNotes Browser Extension
 
+![image](images/2025-08-12_12-48-17.png)
+
 A browser extension that integrates TaskNotes with Gmail and other web pages, allowing you to create tasks directly from your browser.
 
 ## Features
@@ -75,7 +77,7 @@ A browser extension that integrates TaskNotes with Gmail and other web pages, al
 ### Extension Popup
 
 1. **Click extension icon** in Chrome toolbar
-2. **Create custom tasks** with title, priority, tags, notes
+2. **Create custom tasks** with title, priority, notes
 3. **Quick actions**: Add current page, view stats
 4. **Configure settings**: API port, auth token, defaults
 5. **Monitor connection** status

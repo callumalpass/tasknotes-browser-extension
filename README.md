@@ -126,8 +126,6 @@ The extension communicates with your local TaskNotes API:
 
 ## Development
 
-```
-
 ### Project Structure
 
 ```

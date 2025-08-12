@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "TaskNotes Gmail Integration",
+  "name": "Obsidian TaskNotes web extension",
   "version": "1.0.0",
-  "description": "Create TaskNotes tasks directly from Gmail and other web pages",
+  "description": "Create TaskNotes tasks directly from Gmail, Outlook and other web pages",
   
   "permissions": [
     "activeTab",

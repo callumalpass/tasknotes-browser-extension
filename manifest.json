@@ -13,7 +13,6 @@
   ],
   
   "host_permissions": [
-    "http://localhost:*/*",
     "https://mail.google.com/*",
     "https://outlook.live.com/*",
     "https://outlook.office.com/*"

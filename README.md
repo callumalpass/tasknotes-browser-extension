@@ -9,7 +9,6 @@ A browser extension that integrates TaskNotes with Gmail and other web pages, al
 - **Gmail Integration**: Add TaskNotes button directly to Gmail interface
 - **One-Click Task Creation**: Create tasks from emails with extracted metadata
 - **Right-Click Context Menu**: Add tasks from any webpage, selected text, or links
-- **Keyboard Shortcuts**: Quick task creation with Ctrl+Shift+T (Cmd+Shift+T on Mac)
 - **Popup Interface**: Full-featured task creation and settings management
 - **Connection Status**: Real-time API connection monitoring
 - **Customizable Settings**: Configure API port, authentication, default tags

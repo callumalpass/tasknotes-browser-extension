@@ -1,0 +1,70 @@
+{
+  "manifest_version": 3,
+  "name": "TaskNotes Gmail Integration",
+  "version": "1.0.0",
+  "description": "Create TaskNotes tasks directly from Gmail and other web pages",
+  
+  "permissions": [
+    "activeTab",
+    "storage",
+    "contextMenus",
+    "notifications",
+    "scripting"
+  ],
+  
+  "host_permissions": [
+    "http://localhost:*/*",
+    "https://mail.google.com/*",
+    "https://outlook.live.com/*",
+    "https://outlook.office.com/*"
+  ],
+  
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": [
+        "https://mail.google.com/*"
+      ],
+      "js": ["content-scripts/gmail.js"],
+      "css": ["styles/gmail.css"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "https://outlook.live.com/*",
+        "https://outlook.office.com/*"
+      ],
+      "js": ["content-scripts/outlook.js"],
+      "css": ["styles/outlook.css"],
+      "run_at": "document_end"
+    }
+  ],
+  
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Add to TaskNotes",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  
+  "web_accessible_resources": [
+    {
+      "resources": ["images/*", "icons/*"],
+      "matches": ["https://*/*"]
+    }
+  ]
+}

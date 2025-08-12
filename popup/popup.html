@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskNotes</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <img src="../icons/icon-32.svg" alt="TaskNotes" class="logo">
+            <h1>TaskNotes</h1>
+        </header>
+
+        <!-- Connection Status -->
+        <div id="connection-status" class="status-section">
+            <div id="status-indicator" class="status-indicator">
+                <span class="status-dot"></span>
+                <span class="status-text">Connecting...</span>
+            </div>
+            <button id="test-connection" class="btn btn-small">Test Connection</button>
+        </div>
+
+        <!-- Quick Task Creation -->
+        <div class="section">
+            <h3>Create Task</h3>
+            <form id="task-form">
+                <div class="form-group">
+                    <label for="task-title">Title:</label>
+                    <input type="text" id="task-title" placeholder="Task title..." required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="task-priority">Priority:</label>
+                        <select id="task-priority">
+                            <option value="Low">Low</option>
+                            <option value="Normal" selected>Normal</option>
+                            <option value="High">High</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="task-tags">Tags:</label>
+                        <input type="text" id="task-tags" placeholder="web, urgent">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="task-notes">Notes:</label>
+                    <textarea id="task-notes" placeholder="Additional details..." rows="3"></textarea>
+                </div>
+                
+                <button type="submit" id="create-task-btn" class="btn btn-primary">
+                    Create Task
+                </button>
+            </form>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="section">
+            <h3>Quick Actions</h3>
+            <div class="actions">
+                <button id="add-page-task" class="btn btn-secondary">
+                    Add Current Page
+                </button>
+                <button id="view-stats" class="btn btn-secondary">
+                    View Stats
+                </button>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="section">
+            <h3>Settings</h3>
+            <div class="form-group">
+                <label for="api-port">API Port:</label>
+                <input type="number" id="api-port" min="1024" max="65535" value="8080">
+            </div>
+            
+            <div class="form-group">
+                <label for="auth-token">Auth Token:</label>
+                <input type="password" id="auth-token" placeholder="Optional">
+            </div>
+            
+            <div class="form-group">
+                <label for="default-tags">Default Tags:</label>
+                <input type="text" id="default-tags" placeholder="web, browser">
+            </div>
+            
+            <button id="save-settings" class="btn btn-secondary">
+                Save Settings
+            </button>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="messages" class="messages"></div>
+        
+        <!-- Footer -->
+        <footer class="footer">
+            <a href="https://github.com/callumalpass/tasknotes" target="_blank">TaskNotes Plugin</a>
+            <span>•</span>
+            <a href="https://github.com/callumalpass/tasknotes-browser-extension" target="_blank">Extension</a>
+        </footer>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

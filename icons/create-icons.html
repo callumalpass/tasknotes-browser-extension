@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create TaskNotes Icons</title>
+</head>
+<body>
+    <h1>Icon Generator</h1>
+    <p>To create icons for the extension:</p>
+    <ol>
+        <li>Create a 128x128 PNG icon with the TaskNotes logo/clipboard emoji</li>
+        <li>Use an online tool like <a href="https://icon-generator.net/">icon-generator.net</a></li>
+        <li>Generate 16x16, 32x32, 48x48, and 128x128 versions</li>
+        <li>Name them: icon-16.png, icon-32.png, icon-48.png, icon-128.png</li>
+        <li>Place them in this icons/ folder</li>
+    </ol>
+    
+    <p>For now, you can use simple colored squares or the browser will show a default icon.</p>
+    
+    <canvas id="icon128" width="128" height="128" style="border: 1px solid #ccc;"></canvas>
+    
+    <script>
+        // Create a simple icon programmatically
+        const canvas = document.getElementById('icon128');
+        const ctx = canvas.getContext('2d');
+        
+        // Background
+        ctx.fillStyle = '#2563eb';
+        ctx.fillRect(0, 0, 128, 128);
+        
+        // Text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 60px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('📋', 64, 64);
+        
+        // You can right-click and save this as icon-128.png
+    </script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+/* TaskNotes Gmail Integration Styles */
+
+.tasknotes-button {
+    background-color: #f8f9fa !important;
+    border: 1px solid #dadce0 !important;
+    border-radius: 4px !important;
+    color: #3c4043 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    font-family: 'Google Sans', Roboto, arial, sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    height: 36px !important;
+    padding: 0 12px !important;
+    margin-left: 8px !important;
+    transition: all 0.2s ease !important;
+    text-decoration: none !important;
+}
+
+.tasknotes-button:hover {
+    background-color: #f1f3f4 !important;
+    border-color: #c1c7cd !important;
+    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3) !important;
+}
+
+.tasknotes-button:active {
+    background-color: #e8eaed !important;
+    border-color: #9aa0a6 !important;
+    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3) inset !important;
+}
+
+.tasknotes-button:focus {
+    border-color: #1a73e8 !important;
+    box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2) !important;
+    outline: none !important;
+}
+
+.tasknotes-button .asa {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.tasknotes-button .aV3 {
+    font-size: 16px !important;
+    line-height: 1 !important;
+}
+
+.tasknotes-button-text {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #3c4043 !important;
+}
+
+/* Notifications */
+.tasknotes-notification {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    padding: 12px 16px !important;
+    border-radius: 6px !important;
+    font-family: 'Google Sans', Roboto, arial, sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    z-index: 9999 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    animation: tasknotesSlideIn 0.3s ease !important;
+    max-width: 300px !important;
+    word-wrap: break-word !important;
+}
+
+.tasknotes-notification-success {
+    background-color: #e8f5e8 !important;
+    color: #1e4620 !important;
+    border: 1px solid #c3e6c3 !important;
+}
+
+.tasknotes-notification-error {
+    background-color: #fce8e6 !important;
+    color: #d73502 !important;
+    border: 1px solid #f4b9b2 !important;
+}
+
+.tasknotes-notification-info {
+    background-color: #e3f2fd !important;
+    color: #0d47a1 !important;
+    border: 1px solid #90caf9 !important;
+}
+
+@keyframes tasknotesSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Loading state for button */
+.tasknotes-button[data-loading="true"] {
+    opacity: 0.6 !important;
+    pointer-events: none !important;
+}
+
+.tasknotes-button[data-loading="true"] .tasknotes-button-text::after {
+    content: "..." !important;
+    animation: tasknotesLoadingDots 1.5s infinite !important;
+}
+
+@keyframes tasknotesLoadingDots {
+    0%, 20% { content: "" !important; }
+    40% { content: "." !important; }
+    60% { content: ".." !important; }
+    80%, 100% { content: "..." !important; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .tasknotes-button {
+        height: 32px !important;
+        padding: 0 8px !important;
+        font-size: 12px !important;
+    }
+    
+    .tasknotes-button-text {
+        display: none !important;
+    }
+    
+    .tasknotes-notification {
+        right: 10px !important;
+        top: 10px !important;
+        max-width: calc(100vw - 20px) !important;
+        font-size: 13px !important;
+    }
+}
+
+/* Removed dark theme styling to prevent conflicts with Gmail's own dark mode */

@@ -171,15 +171,15 @@ class TaskNotesPopup {
   prefillTaskForm() {
     if (this.currentTab) {
       const titleInput = document.getElementById('task-title');
-      const notesInput = document.getElementById('task-notes');
+      const detailsInput = document.getElementById('task-details');
       
       // Actually fill in the title field, not just placeholder
       titleInput.value = `Review: ${this.currentTab.title}`;
       titleInput.placeholder = `Review: ${this.currentTab.title}`;
       
-      // Actually fill in the notes field, not just placeholder
-      notesInput.value = `Source: ${this.currentTab.url}`;
-      notesInput.placeholder = `Source: ${this.currentTab.url}`;
+      // Actually fill in the details field, not just placeholder
+      detailsInput.value = `Source: ${this.currentTab.url}`;
+      detailsInput.placeholder = `Source: ${this.currentTab.url}`;
       
       // Pre-fill tags
       const tagsInput = document.getElementById('task-tags');
@@ -206,7 +206,7 @@ class TaskNotesPopup {
         .split(',')
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0);
-      const notes = document.getElementById('task-notes').value.trim() ||
+      const details = document.getElementById('task-details').value.trim() ||
                    `Source: ${this.currentTab.url}`;
 
       // Prepare task data
@@ -214,7 +214,7 @@ class TaskNotesPopup {
         title,
         priority,
         tags: tags.length > 0 ? tags : ['web'],
-        notes: notes + `\n\nCreated from: ${this.currentTab.url}`
+        details: details + `\n\nCreated from: ${this.currentTab.url}`
       };
 
       // Send to background script
@@ -228,7 +228,7 @@ class TaskNotesPopup {
         
         // Clear form
         document.getElementById('task-title').value = '';
-        document.getElementById('task-notes').value = '';
+        document.getElementById('task-details').value = '';
         
         // Close popup after short delay
         setTimeout(() => window.close(), 1500);
@@ -260,7 +260,7 @@ class TaskNotesPopup {
         title: `Review: ${this.currentTab.title}`,
         priority: this.settings.defaultPriority,
         tags: this.settings.defaultTags.split(',').map(tag => tag.trim()),
-        notes: `Source: ${this.currentTab.url}\n\nAdded from browser extension`
+        details: `Source: ${this.currentTab.url}\n\nAdded from browser extension`
       };
 
       const response = await this.sendMessage({

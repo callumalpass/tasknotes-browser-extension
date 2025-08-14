@@ -355,6 +355,46 @@ select option[data-color]::before {
     width: 100%;
 }
 
+/* Sync Status */
+.sync-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--size-4-2);
+    background: var(--background-secondary);
+    border-radius: var(--radius-s);
+    margin-bottom: var(--size-4-3);
+    font-size: var(--font-ui-small);
+}
+
+.sync-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--size-4-1);
+}
+
+.sync-dot {
+    width: var(--size-4-1);
+    height: var(--size-4-1);
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: background-color 0.2s ease;
+}
+
+.sync-indicator.active .sync-dot {
+    background: var(--color-success);
+}
+
+.sync-indicator.checking .sync-dot {
+    background: #f59e0b;
+    animation: pulse 1.5s infinite;
+}
+
+.sync-text {
+    color: var(--text-muted);
+    font-size: var(--font-ui-small);
+}
+
 /* Time Tracking Section */
 .time-tracking-status {
     padding: var(--size-4-3);

@@ -40,6 +40,9 @@ class TaskNotesPopup {
     
     // Set up action bar
     this.setupActionBar();
+    
+    // Start time tracking sync
+    this.startTimeTrackingSync();
   }
 
   /**
@@ -293,6 +296,11 @@ class TaskNotesPopup {
       if (selectedTaskId) {
         this.selectTaskForTracking(selectedTaskId);
       }
+    });
+    
+    // Refresh tracking button
+    document.getElementById('refresh-tracking-btn').addEventListener('click', () => {
+      this.refreshTimeTracking();
     });
   }
 
@@ -811,6 +819,102 @@ class TaskNotesPopup {
     } else {
       statusDiv.classList.remove('active');
       statusDiv.innerHTML = '<p class="no-tracking">No active time tracking</p>';
+    }
+  }
+  
+  /**
+   * Start time tracking sync (polling)
+   */
+  startTimeTrackingSync() {
+    // Initial check
+    this.refreshTimeTracking();
+    
+    // Set up polling every 5 seconds
+    this.syncInterval = setInterval(() => {
+      this.refreshTimeTracking();
+    }, 5000);
+    
+    // Update sync status
+    this.updateSyncStatus('active', 'Syncing every 5 seconds');
+  }
+  
+  /**
+   * Refresh time tracking from API
+   */
+  async refreshTimeTracking() {
+    try {
+      this.updateSyncStatus('checking', 'Checking for updates...');
+      
+      // Get current time tracking from API
+      const response = await this.sendMessage({ action: 'getCurrentTimeTracking' });
+      
+      if (response.success) {
+        this.handleTimeTrackingUpdate(response.data);
+        this.updateSyncStatus('active', `Last checked: ${new Date().toLocaleTimeString()}`);
+      } else {
+        this.updateSyncStatus('active', 'No active tracking found');
+      }
+    } catch (error) {
+      console.error('Error refreshing time tracking:', error);
+      this.updateSyncStatus('active', 'Error syncing');
+    }
+  }
+  
+  /**
+   * Update sync status indicator
+   */
+  updateSyncStatus(status, text) {
+    const indicator = document.getElementById('sync-indicator');
+    const textEl = indicator.querySelector('.sync-text');
+    
+    indicator.className = `sync-indicator ${status}`;
+    textEl.textContent = text;
+  }
+  
+  /**
+   * Handle time tracking updates from API
+   */
+  handleTimeTrackingUpdate(data) {
+    if (data) {
+      // Update UI with active tracking
+      this.currentTrackingTask = {
+        id: data.taskId,
+        title: data.taskTitle
+      };
+      this.trackingStartTime = new Date(data.startTime).getTime();
+      
+      // Update UI
+      document.getElementById('start-tracking-btn').disabled = true;
+      document.getElementById('stop-tracking-btn').disabled = false;
+      document.getElementById('recent-task-select').disabled = true;
+      
+      // Start local timer update
+      if (this.trackingInterval) {
+        clearInterval(this.trackingInterval);
+      }
+      this.trackingInterval = setInterval(() => {
+        this.updateTimeTrackingDisplay();
+      }, 1000);
+      
+      this.updateTimeTrackingDisplay();
+      
+    } else {
+      // No active tracking
+      this.currentTrackingTask = null;
+      this.trackingStartTime = null;
+      
+      if (this.trackingInterval) {
+        clearInterval(this.trackingInterval);
+        this.trackingInterval = null;
+      }
+      
+      // Reset UI
+      document.getElementById('start-tracking-btn').disabled = false;
+      document.getElementById('stop-tracking-btn').disabled = true;
+      document.getElementById('recent-task-select').disabled = false;
+      document.getElementById('recent-task-select').value = '';
+      
+      this.updateTimeTrackingDisplay();
     }
   }
   

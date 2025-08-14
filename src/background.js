@@ -147,9 +147,34 @@ class TaskNotesAPI {
     console.log('Filter options result:', result);
     return result;
   }
+
+
+  async getActiveTimeTracking() {
+    try {
+      const result = await this.request('/time/active');
+      console.log('Active time tracking result:', result);
+      return result;
+    } catch (error) {
+      console.log('Error getting active time tracking:', error);
+      return { success: false, data: null };
+    }
+  }
+
+  async getTimeSummary(period = 'today') {
+    try {
+      const result = await this.request(`/time/summary?period=${period}`);
+      console.log('Time summary result:', result);
+      return result;
+    } catch (error) {
+      console.log('Error getting time summary:', error);
+      return { success: false, data: null };
+    }
+  }
 }
 
 let api;
+let currentTimeTracking = null;
+let pollingInterval = null;
 
 console.log('TaskNotes background script loaded');
 
@@ -161,7 +186,10 @@ chrome.runtime.onInstalled.addListener(() => {
   
   // Initialize API client
   api = new TaskNotesAPI();
-  api.initialize();
+  api.initialize().then(() => {
+    // Start polling for time tracking after API is initialized
+    startTimeTrackingPoller();
+  });
   
   // Create context menu items
   createContextMenus();
@@ -174,7 +202,13 @@ chrome.runtime.onStartup.addListener(() => {
   // Initialize API client
   if (!api) {
     api = new TaskNotesAPI();
-    api.initialize();
+    api.initialize().then(() => {
+      // Start polling for time tracking after API is initialized
+      startTimeTrackingPoller();
+    });
+  } else {
+    // If API already exists, just start the poller
+    startTimeTrackingPoller();
   }
 });
 
@@ -562,10 +596,78 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         .catch(error => sendResponse({ success: false, error: error.message }));
       return true;
 
+
+    case 'getCurrentTimeTracking':
+      api.getActiveTimeTracking()
+        .then(result => {
+          if (result.success && result.data.activeSessions && result.data.activeSessions.length > 0) {
+            const session = result.data.activeSessions[0];
+            sendResponse({ 
+              success: true, 
+              data: {
+                taskId: session.task.id,
+                taskTitle: session.task.title,
+                startTime: session.session.startTime,
+                elapsedTime: session.elapsedMinutes * 60000 // Convert to milliseconds
+              }
+            });
+          } else {
+            sendResponse({ success: true, data: null });
+          }
+        })
+        .catch(error => sendResponse({ success: false, error: error.message }));
+      return true;
+
     default:
       sendResponse({ success: false, error: 'Unknown action' });
   }
 });
+
+/**
+ * Time tracking poller
+ */
+
+function startTimeTrackingPoller() {
+  if (pollingInterval) return;
+  
+  console.log('Starting time tracking poller');
+  
+  // Poll every 5 seconds for time tracking updates
+  pollingInterval = setInterval(async () => {
+    try {
+      // Get active time tracking sessions
+      const response = await api.getActiveTimeTracking();
+      
+      if (response.success && response.data.activeSessions && response.data.activeSessions.length > 0) {
+        const session = response.data.activeSessions[0];
+        
+        currentTimeTracking = {
+          taskId: session.task.id,
+          taskTitle: session.task.title,
+          startTime: session.session.startTime,
+          elapsedTime: session.elapsedMinutes * 60000 // Convert to milliseconds
+        };
+        
+        console.log('Active time tracking detected:', currentTimeTracking);
+      } else {
+        currentTimeTracking = null;
+        console.log('No active time tracking');
+      }
+    } catch (error) {
+      console.error('Error polling time tracking:', error);
+      currentTimeTracking = null;
+    }
+  }, 5000);
+}
+
+function stopTimeTrackingPoller() {
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+  }
+  currentTimeTracking = null;
+}
+
 
 /**
  * Handle extension updates

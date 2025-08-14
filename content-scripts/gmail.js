@@ -348,9 +348,10 @@ class GmailTaskNotesIntegration {
       // Prepare task data
       const taskData = {
         title: emailData.subject ? `Email: ${emailData.subject}` : 'Gmail Task',
-        priority: 'Normal',
+        status: 'open',
+        priority: 'normal',
         tags: ['email', 'gmail'],
-        notes: this.formatEmailNotes(emailData)
+        details: this.formatEmailNotes(emailData)
       };
 
       // Send message to background script to create task

@@ -7,6 +7,10 @@ class TaskNotesPopup {
   constructor() {
     this.currentTab = null;
     this.settings = {};
+    this.recentTasks = [];
+    this.currentTrackingTask = null;
+    this.trackingInterval = null;
+    this.trackingStartTime = null;
     this.init();
   }
 
@@ -30,6 +34,12 @@ class TaskNotesPopup {
     
     // Pre-fill form with current page info
     this.prefillTaskForm();
+    
+    // Load recent tasks for time tracking
+    this.loadRecentTasks();
+    
+    // Set up action bar
+    this.setupActionBar();
   }
 
   /**
@@ -49,7 +59,8 @@ class TaskNotesPopup {
         apiPort: 8080,
         apiAuthToken: '',
         defaultTags: 'web',
-        defaultPriority: 'Normal'
+        defaultStatus: 'open',
+        defaultPriority: 'normal'
       }, resolve);
     });
     
@@ -61,7 +72,7 @@ class TaskNotesPopup {
   }
 
   /**
-   * Load filter options from API (including custom priorities)
+   * Load filter options from API (including custom priorities, statuses, etc.)
    */
   async loadFilterOptions() {
     try {
@@ -73,18 +84,73 @@ class TaskNotesPopup {
       if (response.success && response.data && response.data.success) {
         const filterOptions = response.data.data;
         console.log('Filter options loaded:', filterOptions);
-        console.log('Priorities from API:', filterOptions.priorities);
         
-        // Update priority dropdown with custom priorities
+        // Update all dropdowns with custom values
+        this.updateStatusDropdown(filterOptions.statuses || []);
         this.updatePriorityDropdown(filterOptions.priorities || []);
+        this.setupAutoComplete('task-contexts', filterOptions.contexts || []);
+        this.setupAutoComplete('task-projects', filterOptions.projects || []);
+        this.setupAutoComplete('task-tags', filterOptions.tags || []);
       } else {
         console.warn('Failed to load filter options:', response);
+        // Use fallback values
+        this.updateStatusDropdown([]);
         this.updatePriorityDropdown([]);
       }
     } catch (error) {
       console.error('Error loading filter options:', error);
+      // Use fallback values
+      this.updateStatusDropdown([]);
       this.updatePriorityDropdown([]);
     }
+  }
+
+  /**
+   * Update status dropdown with custom statuses from API
+   */
+  updateStatusDropdown(statuses) {
+    const statusSelect = document.getElementById('task-status');
+    
+    // Clear existing options
+    statusSelect.innerHTML = '';
+    
+    if (statuses && statuses.length > 0) {
+      // Use custom statuses from API, sorted by order
+      console.log('Using custom statuses:', statuses);
+      const sortedStatuses = [...statuses].sort((a, b) => a.order - b.order);
+      
+      sortedStatuses.forEach(status => {
+        // Skip 'none' status as it's not valid for task creation
+        if (status.value === 'none') return;
+        
+        const option = document.createElement('option');
+        option.value = status.value;
+        option.textContent = status.label;
+        // Store color as data attribute for potential styling
+        option.dataset.color = status.color;
+        option.dataset.completed = status.isCompleted;
+        statusSelect.appendChild(option);
+      });
+    } else {
+      // Fallback to default statuses if API unavailable
+      console.log('Using fallback statuses');
+      const defaultStatuses = [
+        { value: 'todo', label: 'To Do' },
+        { value: 'open', label: 'Open' },
+        { value: 'in-progress', label: 'In Progress' },
+        { value: 'completed', label: 'Completed' }
+      ];
+      
+      defaultStatuses.forEach(status => {
+        const option = document.createElement('option');
+        option.value = status.value;
+        option.textContent = status.label;
+        statusSelect.appendChild(option);
+      });
+    }
+    
+    // Set default status
+    statusSelect.value = this.settings.defaultStatus || 'open';
   }
 
   /**
@@ -97,35 +163,84 @@ class TaskNotesPopup {
     prioritySelect.innerHTML = '';
     
     if (priorities && priorities.length > 0) {
-      // Use custom priorities from API
+      // Use custom priorities from API, sorted by weight
       console.log('Using custom priorities:', priorities);
-      priorities.forEach(priority => {
+      const sortedPriorities = [...priorities].sort((a, b) => a.weight - b.weight);
+      
+      sortedPriorities.forEach(priority => {
+        // Skip 'none' priority as it's not valid for task creation
+        if (priority.value === 'none') return;
+        
         const option = document.createElement('option');
-        option.value = priority.value || priority.id;
-        option.textContent = priority.label || priority.name;
+        option.value = priority.value;
+        option.textContent = priority.label;
+        // Store color as data attribute for potential styling
+        option.dataset.color = priority.color;
+        option.dataset.weight = priority.weight;
         prioritySelect.appendChild(option);
-        console.log(`Added priority option: ${option.value} - ${option.textContent}`);
       });
     } else {
       // Fallback to default priorities if API unavailable
       console.log('Using fallback priorities');
       const defaultPriorities = [
-        { value: 'low', name: 'Low' },
-        { value: 'normal', name: 'Normal' },
-        { value: 'high', name: 'High' },
-        { value: 'critical', name: 'Critical' }
+        { value: 'low', label: 'Low' },
+        { value: 'normal', label: 'Normal' },
+        { value: 'high', label: 'High' },
+        { value: 'urgent', label: 'Urgent' }
       ];
       
       defaultPriorities.forEach(priority => {
         const option = document.createElement('option');
         option.value = priority.value;
-        option.textContent = priority.name;
+        option.textContent = priority.label;
         prioritySelect.appendChild(option);
       });
     }
     
     // Set default priority after populating options
     prioritySelect.value = this.settings.defaultPriority || 'normal';
+  }
+
+  /**
+   * Setup autocomplete for input fields
+   */
+  setupAutoComplete(inputId, suggestions) {
+    const input = document.getElementById(inputId);
+    if (!input || !suggestions || suggestions.length === 0) return;
+    
+    // Filter out null values and ensure we have strings
+    const validSuggestions = suggestions.filter(s => s && typeof s === 'string');
+    if (validSuggestions.length === 0) return;
+    
+    // Create datalist for autocomplete
+    const datalistId = `${inputId}-list`;
+    let datalist = document.getElementById(datalistId);
+    
+    if (!datalist) {
+      datalist = document.createElement('datalist');
+      datalist.id = datalistId;
+      input.parentElement.appendChild(datalist);
+      input.setAttribute('list', datalistId);
+    }
+    
+    // Clear existing options
+    datalist.innerHTML = '';
+    
+    // Add suggestions as options
+    validSuggestions.forEach(suggestion => {
+      const option = document.createElement('option');
+      option.value = suggestion;
+      datalist.appendChild(option);
+    });
+    
+    // Add placeholder to show example format
+    if (inputId === 'task-contexts') {
+      input.placeholder = validSuggestions.slice(0, 2).map(c => `@${c}`).join(', ') + '...';
+    } else if (inputId === 'task-projects') {
+      input.placeholder = validSuggestions.slice(0, 2).join(', ') + '...';
+    } else if (inputId === 'task-tags') {
+      input.placeholder = validSuggestions.slice(0, 3).join(', ') + '...';
+    }
   }
 
   /**
@@ -163,8 +278,149 @@ class TaskNotesPopup {
         this.saveSettings();
       });
     });
+    
+    // Time tracking controls
+    document.getElementById('start-tracking-btn').addEventListener('click', () => {
+      this.startTimeTracking();
+    });
+    
+    document.getElementById('stop-tracking-btn').addEventListener('click', () => {
+      this.stopTimeTracking();
+    });
+    
+    document.getElementById('recent-task-select').addEventListener('change', (e) => {
+      const selectedTaskId = e.target.value;
+      if (selectedTaskId) {
+        this.selectTaskForTracking(selectedTaskId);
+      }
+    });
   }
 
+  /**
+   * Set up action bar interactions
+   */
+  setupActionBar() {
+    const actionIcons = document.querySelectorAll('.action-icon');
+    
+    actionIcons.forEach(icon => {
+      icon.addEventListener('click', (e) => {
+        const type = icon.dataset.type;
+        this.handleActionIconClick(type, icon);
+      });
+    });
+  }
+  
+  /**
+   * Handle action icon clicks
+   */
+  handleActionIconClick(type, iconElement) {
+    switch(type) {
+      case 'due-date':
+        this.toggleDateInput('due', iconElement);
+        break;
+      case 'scheduled-date':
+        this.toggleDateInput('scheduled', iconElement);
+        break;
+      case 'status':
+        this.focusField('task-status');
+        break;
+      case 'priority':
+        this.focusField('task-priority');
+        break;
+    }
+  }
+  
+  /**
+   * Toggle date input visibility
+   */
+  toggleDateInput(type, iconElement) {
+    const dateInputsSection = document.querySelector('.date-inputs');
+    const isVisible = dateInputsSection.classList.contains('visible');
+    
+    if (!isVisible) {
+      dateInputsSection.style.display = 'block';
+      dateInputsSection.classList.add('visible');
+    }
+    
+    // Focus the appropriate input
+    const inputId = type === 'due' ? 'task-due' : 'task-scheduled';
+    document.getElementById(inputId).focus();
+    
+    // Update icon state
+    this.updateActionIconStates();
+  }
+  
+  /**
+   * Focus a specific field
+   */
+  focusField(fieldId) {
+    const field = document.getElementById(fieldId);
+    if (field) {
+      field.focus();
+      if (field.tagName === 'SELECT') {
+        field.click();
+      }
+    }
+  }
+  
+  /**
+   * Update action icon states based on form values
+   */
+  updateActionIconStates() {
+    const dueDate = document.getElementById('task-due').value;
+    const scheduledDate = document.getElementById('task-scheduled').value;
+    const status = document.getElementById('task-status').value;
+    const priority = document.getElementById('task-priority').value;
+    
+    // Update due date icon
+    const dueDateIcon = document.querySelector('[data-type="due-date"]');
+    if (dueDateIcon) {
+      if (dueDate) {
+        dueDateIcon.classList.add('has-value');
+        dueDateIcon.title = `Due: ${new Date(dueDate).toLocaleString()}`;
+      } else {
+        dueDateIcon.classList.remove('has-value');
+        dueDateIcon.title = 'Set due date';
+      }
+    }
+    
+    // Update scheduled date icon
+    const scheduledIcon = document.querySelector('[data-type="scheduled-date"]');
+    if (scheduledIcon) {
+      if (scheduledDate) {
+        scheduledIcon.classList.add('has-value');
+        scheduledIcon.title = `Scheduled: ${new Date(scheduledDate).toLocaleString()}`;
+      } else {
+        scheduledIcon.classList.remove('has-value');
+        scheduledIcon.title = 'Set scheduled date';
+      }
+    }
+    
+    // Update status icon
+    const statusIcon = document.querySelector('[data-type="status"]');
+    if (statusIcon) {
+      if (status && status !== 'open') {
+        statusIcon.classList.add('has-value');
+        statusIcon.title = `Status: ${status}`;
+      } else {
+        statusIcon.classList.remove('has-value');
+        statusIcon.title = 'Set status';
+      }
+    }
+    
+    // Update priority icon
+    const priorityIcon = document.querySelector('[data-type="priority"]');
+    if (priorityIcon) {
+      if (priority && priority !== 'normal') {
+        priorityIcon.classList.add('has-value');
+        priorityIcon.title = `Priority: ${priority}`;
+      } else {
+        priorityIcon.classList.remove('has-value');
+        priorityIcon.title = 'Set priority';
+      }
+    }
+  }
+  
   /**
    * Pre-fill task form with current page information
    */
@@ -184,6 +440,13 @@ class TaskNotesPopup {
       // Pre-fill tags
       const tagsInput = document.getElementById('task-tags');
       tagsInput.value = this.settings.defaultTags;
+      
+      // Listen for changes to update action icons
+      ['task-due', 'task-scheduled', 'task-status', 'task-priority'].forEach(id => {
+        document.getElementById(id).addEventListener('change', () => {
+          this.updateActionIconStates();
+        });
+      });
     }
   }
 
@@ -201,20 +464,38 @@ class TaskNotesPopup {
       // Get form data
       const title = document.getElementById('task-title').value.trim() ||
                    `Review: ${this.currentTab.title}`;
+      const status = document.getElementById('task-status').value;
       const priority = document.getElementById('task-priority').value;
+      const contexts = document.getElementById('task-contexts').value
+        .split(',')
+        .map(c => c.trim())
+        .filter(c => c.length > 0);
+      const projects = document.getElementById('task-projects').value
+        .split(',')
+        .map(p => p.trim())
+        .filter(p => p.length > 0);
       const tags = document.getElementById('task-tags').value
         .split(',')
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0);
       const details = document.getElementById('task-details').value.trim() ||
                    `Source: ${this.currentTab.url}`;
+      const dueDate = document.getElementById('task-due').value;
+      const scheduledDate = document.getElementById('task-scheduled').value;
+      const timeEstimate = parseInt(document.getElementById('task-time-estimate').value) || undefined;
 
       // Prepare task data
       const taskData = {
         title,
+        status,
         priority,
+        contexts: contexts.length > 0 ? contexts : [],
+        projects: projects.length > 0 ? projects : [],
         tags: tags.length > 0 ? tags : ['web'],
-        details: details + `\n\nCreated from: ${this.currentTab.url}`
+        details: details + `\n\nCreated from: ${this.currentTab.url}`,
+        due: dueDate || undefined,
+        scheduled: scheduledDate || undefined,
+        timeEstimate
       };
 
       // Send to background script
@@ -229,6 +510,12 @@ class TaskNotesPopup {
         // Clear form
         document.getElementById('task-title').value = '';
         document.getElementById('task-details').value = '';
+        document.getElementById('task-due').value = '';
+        document.getElementById('task-scheduled').value = '';
+        document.getElementById('task-contexts').value = '';
+        document.getElementById('task-projects').value = '';
+        document.getElementById('task-time-estimate').value = '';
+        this.updateActionIconStates();
         
         // Close popup after short delay
         setTimeout(() => window.close(), 1500);
@@ -360,6 +647,7 @@ class TaskNotesPopup {
       apiPort: parseInt(document.getElementById('api-port').value) || 8080,
       apiAuthToken: document.getElementById('auth-token').value,
       defaultTags: document.getElementById('default-tags').value,
+      defaultStatus: document.getElementById('task-status').value,
       defaultPriority: document.getElementById('task-priority').value
     };
 
@@ -380,6 +668,152 @@ class TaskNotesPopup {
     });
   }
 
+  /**
+   * Load recent tasks for time tracking
+   */
+  async loadRecentTasks() {
+    try {
+      const response = await this.sendMessage({
+        action: 'getTasks',
+        filters: { status: 'open,in-progress', limit: 20 }
+      });
+      
+      if (response.success && response.data && response.data.data) {
+        this.recentTasks = response.data.data;
+        this.updateRecentTasksDropdown();
+      }
+    } catch (error) {
+      console.error('Error loading recent tasks:', error);
+    }
+  }
+  
+  /**
+   * Update recent tasks dropdown
+   */
+  updateRecentTasksDropdown() {
+    const select = document.getElementById('recent-task-select');
+    select.innerHTML = '<option value="">Select a task...</option>';
+    
+    this.recentTasks.forEach(task => {
+      const option = document.createElement('option');
+      option.value = task.id || task.path;
+      option.textContent = task.title;
+      if (task.priority === 'high' || task.priority === 'urgent') {
+        option.textContent = `⭐ ${task.title}`;
+      }
+      select.appendChild(option);
+    });
+  }
+  
+  /**
+   * Select a task for time tracking
+   */
+  selectTaskForTracking(taskId) {
+    const task = this.recentTasks.find(t => (t.id || t.path) === taskId);
+    if (task) {
+      this.currentTrackingTask = task;
+      // Enable start button
+      document.getElementById('start-tracking-btn').disabled = false;
+    }
+  }
+  
+  /**
+   * Start time tracking
+   */
+  async startTimeTracking() {
+    if (!this.currentTrackingTask) {
+      this.showMessage('Please select a task first', 'error');
+      return;
+    }
+    
+    try {
+      // For now, we'll track locally since the API endpoint isn't available
+      // In a real implementation, this would call the API
+      this.trackingStartTime = Date.now();
+      this.updateTimeTrackingDisplay();
+      
+      // Update UI
+      document.getElementById('start-tracking-btn').disabled = true;
+      document.getElementById('stop-tracking-btn').disabled = false;
+      document.getElementById('recent-task-select').disabled = true;
+      
+      // Start timer
+      this.trackingInterval = setInterval(() => {
+        this.updateTimeTrackingDisplay();
+      }, 1000);
+      
+      this.showMessage('Time tracking started', 'success');
+    } catch (error) {
+      console.error('Error starting time tracking:', error);
+      this.showMessage('Failed to start tracking', 'error');
+    }
+  }
+  
+  /**
+   * Stop time tracking
+   */
+  async stopTimeTracking() {
+    if (!this.currentTrackingTask || !this.trackingStartTime) {
+      return;
+    }
+    
+    try {
+      // Calculate elapsed time
+      const elapsedMs = Date.now() - this.trackingStartTime;
+      const elapsedMinutes = Math.round(elapsedMs / 60000);
+      
+      // In a real implementation, this would save to the API
+      // For now, just show a message
+      this.showMessage(`Tracked ${elapsedMinutes} minutes on "${this.currentTrackingTask.title}"`, 'success');
+      
+      // Reset tracking
+      this.currentTrackingTask = null;
+      this.trackingStartTime = null;
+      if (this.trackingInterval) {
+        clearInterval(this.trackingInterval);
+        this.trackingInterval = null;
+      }
+      
+      // Reset UI
+      document.getElementById('start-tracking-btn').disabled = false;
+      document.getElementById('stop-tracking-btn').disabled = true;
+      document.getElementById('recent-task-select').disabled = false;
+      document.getElementById('recent-task-select').value = '';
+      
+      this.updateTimeTrackingDisplay();
+    } catch (error) {
+      console.error('Error stopping time tracking:', error);
+      this.showMessage('Failed to stop tracking', 'error');
+    }
+  }
+  
+  /**
+   * Update time tracking display
+   */
+  updateTimeTrackingDisplay() {
+    const statusDiv = document.getElementById('time-tracking-status');
+    
+    if (this.currentTrackingTask && this.trackingStartTime) {
+      const elapsedMs = Date.now() - this.trackingStartTime;
+      const seconds = Math.floor(elapsedMs / 1000) % 60;
+      const minutes = Math.floor(elapsedMs / 60000) % 60;
+      const hours = Math.floor(elapsedMs / 3600000);
+      
+      const timeStr = hours > 0 
+        ? `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+        : `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      
+      statusDiv.classList.add('active');
+      statusDiv.innerHTML = `
+        <div class="task-name">${this.currentTrackingTask.title}</div>
+        <div class="time-elapsed">${timeStr}</div>
+      `;
+    } else {
+      statusDiv.classList.remove('active');
+      statusDiv.innerHTML = '<p class="no-tracking">No active time tracking</p>';
+    }
+  }
+  
   /**
    * Show message to user
    */

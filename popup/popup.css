@@ -185,6 +185,58 @@ body {
     flex: 1;
 }
 
+/* Action Bar - TaskNotes Style */
+.action-bar {
+    display: flex;
+    gap: var(--size-4-2);
+    padding: var(--size-4-2);
+    margin: var(--size-4-3) 0;
+    background: var(--background-secondary);
+    border-radius: var(--radius-s);
+    border: 1px solid var(--background-modifier-border);
+}
+
+.action-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-s);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-muted);
+    background: transparent;
+    position: relative;
+}
+
+.action-icon:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.action-icon.has-value {
+    color: var(--interactive-accent);
+    background: rgba(37, 99, 235, 0.1);
+}
+
+.action-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Date inputs section */
+.date-inputs {
+    padding: var(--size-4-3);
+    background: var(--background-secondary);
+    border-radius: var(--radius-s);
+    margin-bottom: var(--size-4-3);
+}
+
+.date-inputs.visible {
+    display: block !important;
+}
+
 label {
     font-size: var(--font-ui-small);
     font-weight: var(--font-weight-medium);
@@ -218,6 +270,24 @@ textarea {
     resize: vertical;
     min-height: 60px;
     font-family: inherit;
+}
+
+/* Style select options with custom colors */
+select option[data-color] {
+    position: relative;
+    padding-left: 20px;
+}
+
+select option[data-color]::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: attr(data-color);
 }
 
 /* Buttons */
@@ -283,6 +353,77 @@ textarea {
 
 .actions .btn {
     width: 100%;
+}
+
+/* Time Tracking Section */
+.time-tracking-status {
+    padding: var(--size-4-3);
+    background: var(--background-secondary);
+    border-radius: var(--radius-s);
+    margin-bottom: var(--size-4-3);
+    text-align: center;
+}
+
+.time-tracking-status.active {
+    background: rgba(37, 99, 235, 0.1);
+    border: 1px solid var(--interactive-accent);
+}
+
+.time-tracking-status .task-name {
+    font-weight: var(--font-weight-medium);
+    color: var(--text-normal);
+    margin-bottom: var(--size-4-1);
+}
+
+.time-tracking-status .time-elapsed {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--interactive-accent);
+    font-family: monospace;
+}
+
+.time-tracking-status .no-tracking {
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.time-tracking-controls {
+    display: flex;
+    gap: var(--size-4-2);
+    margin-bottom: var(--size-4-3);
+}
+
+.time-tracking-controls button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--size-4-1);
+}
+
+.time-tracking-controls button svg {
+    width: 14px;
+    height: 14px;
+}
+
+.recent-tasks {
+    margin-top: var(--size-4-3);
+}
+
+.recent-tasks label {
+    display: block;
+    margin-bottom: var(--size-4-1);
+    font-size: var(--font-ui-small);
+    color: var(--text-muted);
+    font-weight: var(--font-weight-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.recent-tasks select {
+    width: 100%;
+    padding: var(--size-4-2);
+    font-size: var(--font-ui-medium);
 }
 
 /* Messages */

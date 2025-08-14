@@ -31,7 +31,8 @@ class TaskNotesAPI {
         apiPort: 8080,
         apiAuthToken: '',
         defaultTags: ['web'],
-        defaultPriority: 'Normal'
+        defaultStatus: 'open',
+        defaultPriority: 'normal'
       }, resolve);
     });
   }
@@ -98,13 +99,15 @@ class TaskNotesAPI {
       
     const task = {
       title: taskData.title,
+      status: taskData.status || 'open',
       priority: taskData.priority || settings.defaultPriority || 'normal',
       tags: taskData.tags || defaultTags,
       contexts: taskData.contexts || [],
       projects: taskData.projects || [],
-      details: taskData.notes, // Map 'notes' to 'details' for API
+      details: taskData.details || taskData.notes, // Support both 'details' and 'notes' fields
       due: taskData.due,
       scheduled: taskData.scheduled,
+      timeEstimate: taskData.timeEstimate,
       creationContext: 'api'
     };
 
@@ -240,24 +243,27 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       case 'create-task-page':
         taskData = {
           title: `Review: ${tab.title}`,
-          notes: `Source: ${tab.url}`,
-          tags: ['web', 'review']
+          details: `Source: ${tab.url}`,
+          tags: ['web', 'review'],
+          status: 'open'
         };
         break;
 
       case 'create-task-selection':
         taskData = {
           title: `Follow up: ${info.selectionText.substring(0, 50)}...`,
-          notes: `Selected text: "${info.selectionText}"\nSource: ${tab.url}`,
-          tags: ['web', 'follow-up']
+          details: `Selected text: "${info.selectionText}"\nSource: ${tab.url}`,
+          tags: ['web', 'follow-up'],
+          status: 'open'
         };
         break;
 
       case 'create-task-link':
         taskData = {
           title: `Check link: ${info.linkUrl}`,
-          notes: `Link: ${info.linkUrl}\nFound on: ${tab.url}`,
-          tags: ['web', 'link']
+          details: `Link: ${info.linkUrl}\nFound on: ${tab.url}`,
+          tags: ['web', 'link'],
+          status: 'open'
         };
         break;
 
@@ -267,14 +273,16 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         if (emailData) {
           taskData = {
             title: `Email: ${emailData.subject}`,
-            notes: `From: ${emailData.sender}\nSubject: ${emailData.subject}\nURL: ${tab.url}`,
-            tags: ['email', 'gmail']
+            details: `From: ${emailData.sender}\nSubject: ${emailData.subject}\nURL: ${tab.url}`,
+            tags: ['email', 'gmail'],
+            status: 'open'
           };
         } else {
           taskData = {
             title: `Email task from Gmail`,
-            notes: `URL: ${tab.url}`,
-            tags: ['email', 'gmail']
+            details: `URL: ${tab.url}`,
+            tags: ['email', 'gmail'],
+            status: 'open'
           };
         }
         break;

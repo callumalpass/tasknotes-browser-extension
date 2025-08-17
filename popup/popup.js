@@ -3,6 +3,8 @@
  * Handles the popup interface for creating tasks and managing settings
  */
 
+// Browser polyfill is loaded via popup.html before this script
+
 class TaskNotesPopup {
   constructor() {
     this.currentTab = null;
@@ -49,7 +51,7 @@ class TaskNotesPopup {
    * Get current active tab
    */
   async getCurrentTab() {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
     return tab;
   }
 
@@ -57,15 +59,26 @@ class TaskNotesPopup {
    * Load settings from storage
    */
   async loadSettings() {
-    this.settings = await new Promise((resolve) => {
-      chrome.storage.sync.get({
+    try {
+      const stored = await browser.storage.sync.get(['apiPort', 'apiAuthToken', 'defaultTags', 'defaultStatus', 'defaultPriority']);
+      this.settings = {
+        apiPort: stored.apiPort || 8080,
+        apiAuthToken: stored.apiAuthToken || '',
+        defaultTags: stored.defaultTags || 'web',
+        defaultStatus: stored.defaultStatus || 'open',
+        defaultPriority: stored.defaultPriority || 'normal'
+      };
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      // Use defaults if loading fails
+      this.settings = {
         apiPort: 8080,
         apiAuthToken: '',
         defaultTags: 'web',
         defaultStatus: 'open',
         defaultPriority: 'normal'
-      }, resolve);
-    });
+      };
+    }
     
     // Update UI with loaded settings
     document.getElementById('api-port').value = this.settings.apiPort;
@@ -659,9 +672,7 @@ class TaskNotesPopup {
       defaultPriority: document.getElementById('task-priority').value
     };
 
-    await new Promise((resolve) => {
-      chrome.storage.sync.set(settings, resolve);
-    });
+    await browser.storage.sync.set(settings);
 
     this.settings = settings;
     this.showMessage('Settings saved!', 'success');
@@ -671,9 +682,7 @@ class TaskNotesPopup {
    * Send message to background script
    */
   sendMessage(message) {
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage(message, resolve);
-    });
+    return browser.runtime.sendMessage(message);
   }
 
   /**
@@ -686,12 +695,36 @@ class TaskNotesPopup {
         filters: { status: 'open,in-progress', limit: 20 }
       });
       
-      if (response.success && response.data && response.data.data) {
-        this.recentTasks = response.data.data;
+      console.log('Recent tasks response:', response);
+      
+      if (response.success && response.data) {
+        // Handle different response structures
+        let tasksData = null;
+        if (Array.isArray(response.data)) {
+          tasksData = response.data;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          tasksData = response.data.data;
+        } else if (response.data.tasks && Array.isArray(response.data.tasks)) {
+          tasksData = response.data.tasks;
+        }
+        
+        if (tasksData) {
+          this.recentTasks = tasksData;
+          this.updateRecentTasksDropdown();
+        } else {
+          console.warn('No valid tasks data found in response:', response.data);
+          this.recentTasks = [];
+          this.updateRecentTasksDropdown();
+        }
+      } else {
+        console.warn('Failed to load recent tasks:', response);
+        this.recentTasks = [];
         this.updateRecentTasksDropdown();
       }
     } catch (error) {
       console.error('Error loading recent tasks:', error);
+      this.recentTasks = [];
+      this.updateRecentTasksDropdown();
     }
   }
   
@@ -701,6 +734,12 @@ class TaskNotesPopup {
   updateRecentTasksDropdown() {
     const select = document.getElementById('recent-task-select');
     select.innerHTML = '<option value="">Select a task...</option>';
+    
+    // Ensure recentTasks is an array before using forEach
+    if (!Array.isArray(this.recentTasks)) {
+      console.warn('recentTasks is not an array:', this.recentTasks);
+      this.recentTasks = [];
+    }
     
     this.recentTasks.forEach(task => {
       const option = document.createElement('option');

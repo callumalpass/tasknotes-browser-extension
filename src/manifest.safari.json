@@ -1,5 +1,5 @@
 {
-  "manifest_version": 3,
+  "manifest_version": 2,
   "name": "TaskNotes Browser Extension",
   "version": "1.1.0",
   "description": "Create and manage TaskNotes tasks directly from Gmail, Outlook, GitHub issues, and other web pages with full-featured task creation modal.",
@@ -11,10 +11,6 @@
     "storage",
     "contextMenus",
     "notifications",
-    "scripting"
-  ],
-  
-  "host_permissions": [
     "https://mail.google.com/*",
     "https://outlook.live.com/*",
     "https://outlook.office.com/*",
@@ -22,7 +18,8 @@
   ],
   
   "background": {
-    "service_worker": "background.js"
+    "scripts": ["lib/browser-polyfill.min.js", "background.js"],
+    "persistent": false
   },
   
   "content_scripts": [
@@ -53,7 +50,7 @@
     }
   ],
   
-  "action": {
+  "browser_action": {
     "default_popup": "popup/popup.html",
     "default_title": "Add to TaskNotes",
     "default_icon": {
@@ -72,9 +69,9 @@
   },
   
   "web_accessible_resources": [
-    {
-      "resources": ["images/*", "icons/*", "task-creation-modal.js", "lib/browser-polyfill.min.js"],
-      "matches": ["https://*/*"]
-    }
+    "images/*", 
+    "icons/*", 
+    "task-creation-modal.js", 
+    "lib/browser-polyfill.min.js"
   ]
 }

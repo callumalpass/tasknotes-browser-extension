@@ -3,6 +3,7 @@
  * Adds TaskNotes integration to GitHub issues and pull requests
  */
 
+// Browser polyfill is loaded via manifest.json before this script
 console.log('TaskNotes: GitHub content script loaded');
 
 // TaskCreationModal is loaded via manifest.json
@@ -109,7 +110,7 @@ class GitHubTaskNotesIntegration {
     
     button.innerHTML = `
       <span data-component="buttonContent" data-align="center" class="prc-Button-ButtonContent-HKbr-">
-        <img src="${chrome.runtime.getURL('icons/tasknotes-icon-16.png')}" alt="TaskNotes" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px;">
+        <img src="${browser.runtime.getURL('icons/tasknotes-icon-16.png')}" alt="TaskNotes" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px;">
         <span data-component="text" class="prc-Button-Label-pTQ3x">TaskNotes</span>
       </span>
     `;

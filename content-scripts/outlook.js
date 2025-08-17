@@ -3,6 +3,7 @@
  * Adds TaskNotes integration to Outlook web interface
  */
 
+// Browser polyfill is loaded via manifest.json before this script
 console.log('TaskNotes: Outlook content script loaded');
 
 // TaskCreationModal is now loaded via manifest.json
@@ -99,7 +100,7 @@ function addTaskNotesButton() {
 function createButton() {
   const button = document.createElement('button');
   button.className = 'tasknotes-outlook-button';
-  button.innerHTML = `<img src="${chrome.runtime.getURL('icons/tasknotes-icon-16.png')}" alt="TaskNotes" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"> TaskNotes`;
+  button.innerHTML = `<img src="${browser.runtime.getURL('icons/tasknotes-icon-16.png')}" alt="TaskNotes" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"> TaskNotes`;
   button.title = 'Add email to TaskNotes';
   button.style.cssText = `
     background: #0078d4;

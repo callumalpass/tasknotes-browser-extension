@@ -35,15 +35,26 @@ class TaskCreationModal {
    * Load extension settings
    */
   async loadSettings() {
-    this.settings = await new Promise((resolve) => {
-      chrome.storage.sync.get({
+    try {
+      const stored = await browser.storage.sync.get(['apiPort', 'apiAuthToken', 'defaultTags', 'defaultStatus', 'defaultPriority']);
+      this.settings = {
+        apiPort: stored.apiPort || 8080,
+        apiAuthToken: stored.apiAuthToken || '',
+        defaultTags: stored.defaultTags || 'web',
+        defaultStatus: stored.defaultStatus || 'open',
+        defaultPriority: stored.defaultPriority || 'normal'
+      };
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      // Use defaults if loading fails
+      this.settings = {
         apiPort: 8080,
         apiAuthToken: '',
         defaultTags: 'web',
         defaultStatus: 'open',
         defaultPriority: 'normal'
-      }, resolve);
-    });
+      };
+    }
   }
 
   /**
@@ -54,7 +65,7 @@ class TaskCreationModal {
       <div id="tasknotes-modal-overlay" class="tasknotes-modal-overlay">
         <div class="tasknotes-modal-container">
           <div class="tasknotes-modal-header">
-            <img src="${chrome.runtime.getURL('icons/tasknotes-icon-32.svg')}" alt="TaskNotes" class="tasknotes-logo">
+            <img src="${browser.runtime.getURL('icons/tasknotes-icon-32.svg')}" alt="TaskNotes" class="tasknotes-logo">
             <h2>Create Task</h2>
             <button class="tasknotes-close-btn" type="button">×</button>
           </div>
@@ -976,9 +987,7 @@ class TaskCreationModal {
    * Send message to background script
    */
   sendMessage(message) {
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage(message, resolve);
-    });
+    return browser.runtime.sendMessage(message);
   }
 
   /**

@@ -3,6 +3,9 @@
  * Handles extension lifecycle, context menus, and keyboard shortcuts
  */
 
+// Import browser polyfill for Manifest V3 service worker
+importScripts('lib/browser-polyfill.min.js');
+
 // Inline API Client (avoiding importScripts issues)
 class TaskNotesAPI {
   constructor() {
@@ -26,15 +29,26 @@ class TaskNotesAPI {
   }
 
   async getSettings() {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get({
+    try {
+      const stored = await browser.storage.sync.get(['apiPort', 'apiAuthToken', 'defaultTags', 'defaultStatus', 'defaultPriority']);
+      return {
+        apiPort: stored.apiPort || 8080,
+        apiAuthToken: stored.apiAuthToken || '',
+        defaultTags: stored.defaultTags || ['web'],
+        defaultStatus: stored.defaultStatus || 'open',
+        defaultPriority: stored.defaultPriority || 'normal'
+      };
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      // Return defaults if loading fails
+      return {
         apiPort: 8080,
         apiAuthToken: '',
         defaultTags: ['web'],
         defaultStatus: 'open',
         defaultPriority: 'normal'
-      }, resolve);
-    });
+      };
+    }
   }
 
   async request(endpoint, options = {}) {
@@ -135,10 +149,39 @@ class TaskNotesAPI {
   }
 
   async getTasks(filters = {}) {
-    const query = new URLSearchParams(filters).toString();
-    const endpoint = query ? `/tasks?${query}` : '/tasks';
-    console.log('Getting tasks from endpoint:', this.baseUrl + endpoint);
-    return this.request(endpoint);
+    // Note: POST /tasks/query seems to return empty results in current API version
+    // For now, always use GET /tasks and do client-side filtering if needed
+    console.log('Getting tasks using GET /tasks (client-side filtering for:', filters, ')');
+    const result = await this.request('/tasks');
+    
+    // If filters are provided, do basic client-side filtering
+    if (filters && Object.keys(filters).length > 0 && result.success && result.data && result.data.tasks) {
+      let filteredTasks = result.data.tasks;
+      
+      // Filter by status if provided
+      if (filters.status) {
+        const statusFilter = filters.status.split(',').map(s => s.trim());
+        filteredTasks = filteredTasks.filter(task => statusFilter.includes(task.status));
+      }
+      
+      // Apply limit if provided
+      if (filters.limit && typeof filters.limit === 'number') {
+        filteredTasks = filteredTasks.slice(0, filters.limit);
+      }
+      
+      // Return in same format as API
+      return {
+        success: true,
+        data: {
+          tasks: filteredTasks,
+          total: result.data.total,
+          filtered: filteredTasks.length,
+          vault: result.data.vault
+        }
+      };
+    }
+    
+    return result;
   }
 
   async getFilterOptions() {
@@ -181,7 +224,7 @@ console.log('TaskNotes background script loaded');
 /**
  * Extension installation and startup
  */
-chrome.runtime.onInstalled.addListener(() => {
+browser.runtime.onInstalled.addListener(async () => {
   console.log('TaskNotes extension installed');
   
   // Initialize API client
@@ -192,11 +235,11 @@ chrome.runtime.onInstalled.addListener(() => {
   });
   
   // Create context menu items
-  createContextMenus();
+  await createContextMenus();
 });
 
 // Also initialize on startup (when Chrome starts)
-chrome.runtime.onStartup.addListener(() => {
+browser.runtime.onStartup.addListener(() => {
   console.log('TaskNotes extension starting up');
   
   // Initialize API client
@@ -215,52 +258,54 @@ chrome.runtime.onStartup.addListener(() => {
 /**
  * Create right-click context menu items
  */
-function createContextMenus() {
+async function createContextMenus() {
   console.log('Creating context menus...');
-  // Remove any existing context menus
-  chrome.contextMenus.removeAll(() => {
+  
+  try {
+    // Remove any existing context menus
+    await browser.contextMenus.removeAll();
     console.log('Removed existing context menus, creating new ones...');
+    
     // Create main context menu for pages
-    chrome.contextMenus.create({
+    await browser.contextMenus.create({
       id: 'create-task-page',
       title: 'Add page to TaskNotes',
       contexts: ['page']
-    }, () => {
-      if (chrome.runtime.lastError) {
-        console.error('Error creating page context menu:', chrome.runtime.lastError);
-      } else {
-        console.log('Created page context menu successfully');
-      }
     });
+    console.log('Created page context menu successfully');
 
     // Create context menu for selected text
-    chrome.contextMenus.create({
+    await browser.contextMenus.create({
       id: 'create-task-selection',
       title: 'Add selection to TaskNotes',
       contexts: ['selection']
     });
 
     // Create context menu for links
-    chrome.contextMenus.create({
+    await browser.contextMenus.create({
       id: 'create-task-link',
       title: 'Add link to TaskNotes',
       contexts: ['link']
     });
 
     // Gmail-specific context menu
-    chrome.contextMenus.create({
+    await browser.contextMenus.create({
       id: 'create-task-email',
       title: 'Add email to TaskNotes',
       contexts: ['page'],
       documentUrlPatterns: ['https://mail.google.com/*']
     });
-  });
+    
+    console.log('All context menus created successfully');
+  } catch (error) {
+    console.error('Error creating context menus:', error);
+  }
 }
 
 /**
  * Handle context menu clicks
  */
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+browser.contextMenus.onClicked.addListener(async (info, tab) => {
   console.log('Context menu clicked:', info.menuItemId, 'on tab:', tab.url);
 
   // Ensure API is initialized
@@ -340,7 +385,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       await showPageNotification(tab.id, `Task created: ${taskData.title}`, 'success', taskPath);
       
       // Also show Chrome notification as backup (with fallback icon)
-      chrome.notifications.create({
+      browser.notifications.create({
         type: 'basic',
         iconUrl: '/icons/icon-48.png',
         title: 'TaskNotes', 
@@ -357,7 +402,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     await showPageNotification(tab.id, `Error: ${error.message}`, 'error');
     
     // Show error notification (with fallback icon)
-    chrome.notifications.create({
+    browser.notifications.create({
       type: 'basic',
       iconUrl: '/icons/icon-48.png',
       title: 'TaskNotes Error',
@@ -373,7 +418,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
  */
 async function extractEmailData(tabId) {
   try {
-    const results = await chrome.scripting.executeScript({
+    const results = await browser.scripting.executeScript({
       target: { tabId },
       func: () => {
         // This function runs in the page context
@@ -399,7 +444,7 @@ async function extractEmailData(tabId) {
  */
 async function showPageNotification(tabId, message, type = 'info', taskId = null) {
   try {
-    const result = await chrome.scripting.executeScript({
+    const result = await browser.scripting.executeScript({
       target: { tabId },
       func: (message, type, taskId) => {
         // Create notification element
@@ -544,7 +589,7 @@ async function showPageNotification(tabId, message, type = 'info', taskId = null
     console.error('Failed to show page notification:', error);
     
     // Fallback: Show system notification with click instructions
-    chrome.notifications.create({
+    browser.notifications.create({
       type: 'basic',
       iconUrl: '/icons/icon-48.png',
       title: 'TaskNotes - Task Created!',
@@ -556,7 +601,7 @@ async function showPageNotification(tabId, message, type = 'info', taskId = null
 /**
  * Handle messages from content scripts and popup
  */
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('Background received message:', request);
 
   // Ensure API is initialized
@@ -672,8 +717,8 @@ function stopTimeTrackingPoller() {
 /**
  * Handle extension updates
  */
-chrome.runtime.onUpdateAvailable.addListener(() => {
+browser.runtime.onUpdateAvailable.addListener(() => {
   console.log('Extension update available');
   // Auto-reload the extension
-  chrome.runtime.reload();
+  browser.runtime.reload();
 });

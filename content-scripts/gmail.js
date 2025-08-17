@@ -3,6 +3,7 @@
  * Adds TaskNotes integration directly to Gmail interface
  */
 
+// Browser polyfill is loaded via manifest.json before this script
 // TaskCreationModal is now loaded via manifest.json
 
 class GmailTaskNotesIntegration {
@@ -92,7 +93,7 @@ class GmailTaskNotesIntegration {
     // Compact button for header area
     button.innerHTML = `
       <div class="asa">
-        <img src="${chrome.runtime.getURL('icons/tasknotes-icon-16.png')}" alt="TaskNotes" style="width: 16px; height: 16px; vertical-align: middle;">
+        <img src="${browser.runtime.getURL('icons/tasknotes-icon-16.png')}" alt="TaskNotes" style="width: 16px; height: 16px; vertical-align: middle;">
         <span class="tasknotes-button-text">TaskNotes</span>
       </div>
     `;

@@ -1,6 +1,6 @@
 {
   "name": "tasknotes-browser-extension",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Browser extension for TaskNotes integration with Gmail and web pages",
   "main": "src/background.js",
   "scripts": {

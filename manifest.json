@@ -15,7 +15,8 @@
   "host_permissions": [
     "https://mail.google.com/*",
     "https://outlook.live.com/*",
-    "https://outlook.office.com/*"
+    "https://outlook.office.com/*",
+    "https://github.com/*"
   ],
   
   "background": {
@@ -38,6 +39,14 @@
       ],
       "js": ["src/task-creation-modal.js", "content-scripts/outlook.js"],
       "css": ["styles/outlook.css"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "https://github.com/*"
+      ],
+      "js": ["src/task-creation-modal.js", "content-scripts/github.js"],
+      "css": ["styles/github.css"],
       "run_at": "document_end"
     }
   ],

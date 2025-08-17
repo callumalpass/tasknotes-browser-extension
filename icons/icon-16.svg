@@ -1,8 +1,0 @@
-
-<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background -->
-  <rect width="16" height="16" rx="3" fill="#8b5cf6"/>
-  
-  <!-- TN Text -->
-  <text x="8" y="11" font-family="system-ui, -apple-system, sans-serif" font-size="7" font-weight="600" text-anchor="middle" fill="white">TN</text>
-</svg>

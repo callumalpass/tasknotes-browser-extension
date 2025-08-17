@@ -1,0 +1,112 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags like v1.1.0, v2.0.0, etc.
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        
+      - name: Validate version matches manifest
+        run: |
+          MANIFEST_VERSION=$(grep '"version"' manifest.json | cut -d'"' -f4)
+          if [ "$MANIFEST_VERSION" != "${{ steps.version.outputs.VERSION }}" ]; then
+            echo "Error: Tag version (${{ steps.version.outputs.VERSION }}) doesn't match manifest.json version ($MANIFEST_VERSION)"
+            exit 1
+          fi
+          echo "✅ Version validation passed: $MANIFEST_VERSION"
+          
+      - name: Build extension
+        run: |
+          chmod +x build.sh
+          ./build.sh
+          
+      - name: Verify build artifacts
+        run: |
+          if [ ! -f "tasknotes-browser-extension-v${{ steps.version.outputs.VERSION }}.zip" ]; then
+            echo "Error: Build artifact not found"
+            exit 1
+          fi
+          echo "✅ Build artifact verified"
+          
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          
+          # Extract changelog section for this version
+          if [ -f "CHANGELOG.md" ]; then
+            # Try to extract changelog section
+            NOTES=$(awk "/^## \[?$VERSION\]?/,/^## /" CHANGELOG.md | head -n -1 | tail -n +2)
+          fi
+          
+          # Fallback to basic release notes
+          if [ -z "$NOTES" ]; then
+            NOTES="## TaskNotes Browser Extension v$VERSION
+
+This release includes improvements and bug fixes for the TaskNotes browser extension.
+
+### Features
+- Gmail integration with TaskNotes button
+- Outlook integration with TaskNotes button  
+- GitHub issues and pull requests integration
+- Full-featured task creation modal
+- Time tracking capabilities
+- Dark mode support
+
+### Supported Platforms
+- Gmail (mail.google.com)
+- Outlook (outlook.live.com, outlook.office.com)
+- GitHub (github.com)
+
+### Installation
+1. Download the \`tasknotes-browser-extension-v$VERSION.zip\` file
+2. Extract and load as unpacked extension in Chrome
+3. Or submit to browser web stores"
+          fi
+          
+          # Save to file for the release
+          echo "$NOTES" > release_notes.md
+          echo "Generated release notes for v$VERSION"
+          
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "TaskNotes Browser Extension v${{ steps.version.outputs.VERSION }}"
+          body_path: release_notes.md
+          files: |
+            tasknotes-browser-extension-v${{ steps.version.outputs.VERSION }}.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-build-v${{ steps.version.outputs.VERSION }}
+          path: |
+            build/
+            tasknotes-browser-extension-v${{ steps.version.outputs.VERSION }}.zip
+          retention-days: 90
+          
+      - name: Release Summary
+        run: |
+          echo "🎉 Release created successfully!"
+          echo "📦 Package: tasknotes-browser-extension-v${{ steps.version.outputs.VERSION }}.zip"
+          echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.VERSION }}"
+          echo ""
+          echo "🚀 Next steps:"
+          echo "1. Download the release package"
+          echo "2. Test the extension"
+          echo "3. Submit to browser web stores"

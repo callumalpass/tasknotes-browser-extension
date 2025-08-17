@@ -1,0 +1,40 @@
+name: Build Extension
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Allow manual triggers
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Build extension
+        run: |
+          chmod +x build.sh
+          ./build.sh
+          
+      - name: Get version from manifest
+        id: version
+        run: echo "VERSION=$(grep '"version"' manifest.json | cut -d'"' -f4)" >> $GITHUB_OUTPUT
+        
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tasknotes-browser-extension-v${{ steps.version.outputs.VERSION }}-${{ github.sha }}
+          path: |
+            build/
+            tasknotes-browser-extension-v${{ steps.version.outputs.VERSION }}.zip
+          retention-days: 30
+          
+      - name: Build Summary
+        run: |
+          echo "✅ Build completed successfully!"
+          echo "📦 Version: v${{ steps.version.outputs.VERSION }}"
+          echo "📁 Artifacts uploaded to GitHub Actions"

@@ -23,7 +23,20 @@ A browser extension that integrates TaskNotes with Gmail and other web pages, al
 
 ### From Chrome Web Store (Recommended)
 
-*Coming soon - extension will be published to Chrome Web Store*
+Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/obsidian-tasknotes-web-ex/kcbplgbcleppckifepdciipecjhdmchh)
+
+Note that installing this way will receive updates more slowly while changes are approved in the Chrome Web Store. 
+
+### From GitHub releases
+
+1. **Download**: Clone or download the [latest release](https://github.com/callumalpass/tasknotes-browser-extension/releases/latest) zip file
+2. **Unzip** the downloaded file
+3. Install
+   - Open Chrome and go to `chrome://extensions/`
+   - Enable "Developer mode" (toggle in top right)
+   - Click "Load unpacked"
+   - Select the `tasknotes-browser-extension` folder
+4. **Configure**: Click the extension icon and configure your API settings in TaskNotes
 
 ### Manual Installation (Developer Mode)
 
@@ -34,11 +47,12 @@ A browser extension that integrates TaskNotes with Gmail and other web pages, al
    - Enable "Developer mode" (toggle in top right)
    - Click "Load unpacked"
    - Select the `tasknotes-browser-extension` folder
-4. **Configure**: Click the extension icon and configure your API settings
+4. **Configure**: Click the extension icon and configure your API settings in TaskNotes
 
 ## Setup
 
 1. **Enable TaskNotes API**:
+
    - Open Obsidian with TaskNotes plugin installed
    - Go to Settings → TaskNotes → HTTP API tab
    - Enable "Enable HTTP API"
@@ -47,6 +61,7 @@ A browser extension that integrates TaskNotes with Gmail and other web pages, al
    - Restart Obsidian
 
 2. **Configure Extension**:
+
    - Click the TaskNotes extension icon in Chrome
    - Enter your API port (should match TaskNotes settings)
    - Enter authentication token if you set one
@@ -123,28 +138,6 @@ The extension communicates with your local TaskNotes API:
 - **"Connection refused"**: TaskNotes API not running or wrong port
 - **"Unauthorized"**: Check authentication token
 - **"CORS error"**: API should automatically allow cross-origin requests
-
-## Development
-
-### Project Structure
-
-```
-tasknotes-browser-extension/
-├── manifest.json           # Extension manifest
-├── src/
-│   ├── api-client.js      # TaskNotes API client
-│   └── background.js      # Background service worker
-├── popup/
-│   ├── popup.html         # Extension popup interface
-│   ├── popup.css          # Popup styles
-│   └── popup.js           # Popup logic
-├── content-scripts/
-│   ├── gmail.js           # Gmail integration
-│   └── outlook.js         # Outlook integration (future)
-└── styles/
-    ├── gmail.css          # Gmail-specific styles
-    └── outlook.css        # Outlook-specific styles (future)
-```
 
 
 ### Adding New Email Providers

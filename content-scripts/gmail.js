@@ -3,6 +3,8 @@
  * Adds TaskNotes integration directly to Gmail interface
  */
 
+// TaskCreationModal is now loaded via manifest.json
+
 class GmailTaskNotesIntegration {
   constructor() {
     this.initialized = false;
@@ -90,7 +92,7 @@ class GmailTaskNotesIntegration {
     // Compact button for header area
     button.innerHTML = `
       <div class="asa">
-        <img src="${chrome.runtime.getURL('icons/icon-16.png')}" alt="TaskNotes" style="width: 16px; height: 16px; vertical-align: middle;">
+        <img src="${chrome.runtime.getURL('icons/tasknotes-icon-16.png')}" alt="TaskNotes" style="width: 16px; height: 16px; vertical-align: middle;">
         <span class="tasknotes-button-text">TaskNotes</span>
       </div>
     `;
@@ -331,13 +333,10 @@ class GmailTaskNotesIntegration {
   }
 
   /**
-   * Create TaskNotes task from current email
+   * Create TaskNotes task from current email using modal
    */
   async createTaskFromEmail() {
     try {
-      // Show loading state
-      this.setButtonLoading(true);
-
       // Extract email data
       const emailData = this.extractEmailData();
 
@@ -345,32 +344,38 @@ class GmailTaskNotesIntegration {
         throw new Error('Could not extract email information');
       }
 
-      // Prepare task data
-      const taskData = {
+      // TaskCreationModal should be available from manifest injection
+      if (typeof window.TaskCreationModal === 'undefined') {
+        throw new Error('TaskCreationModal not loaded by manifest');
+      }
+
+      // Prepare prefill data
+      const prefillData = {
         title: emailData.subject ? `Email: ${emailData.subject}` : 'Gmail Task',
-        status: 'open',
-        priority: 'normal',
+        details: this.formatEmailNotes(emailData),
         tags: ['email', 'gmail'],
-        details: this.formatEmailNotes(emailData)
+        contexts: emailData.sender ? [`@${emailData.sender.replace(/[<>]/g, '').trim()}`] : [],
+        status: 'open',
+        priority: 'normal'
       };
 
-      // Send message to background script to create task
-      const response = await this.sendMessage({
-        action: 'createTask',
-        taskData: taskData
+      // Create and show modal
+      const modal = new window.TaskCreationModal({
+        prefillData: prefillData,
+        onComplete: (taskData) => {
+          this.showSuccess(`Task created: ${taskData.title}`);
+          modal.destroy();
+        },
+        onCancel: () => {
+          modal.destroy();
+        }
       });
 
-      if (response.success) {
-        this.showSuccess(`Task created: ${taskData.title}`);
-      } else {
-        throw new Error(response.error || 'Failed to create task');
-      }
+      await modal.show();
 
     } catch (error) {
       console.error('Error creating task from email:', error);
       this.showError(error.message);
-    } finally {
-      this.setButtonLoading(false);
     }
   }
 
@@ -402,34 +407,6 @@ class GmailTaskNotesIntegration {
     return notes;
   }
 
-  /**
-   * Send message to background script
-   */
-  sendMessage(message) {
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage(message, resolve);
-    });
-  }
-
-  /**
-   * Set button loading state
-   */
-  setButtonLoading(loading) {
-    const button = document.getElementById('tasknotes-gmail-button');
-    if (button) {
-      if (loading) {
-        button.style.opacity = '0.6';
-        button.style.pointerEvents = 'none';
-        const text = button.querySelector('.tasknotes-button-text');
-        if (text) text.textContent = 'Adding...';
-      } else {
-        button.style.opacity = '1';
-        button.style.pointerEvents = 'auto';
-        const text = button.querySelector('.tasknotes-button-text');
-        if (text) text.textContent = 'TaskNotes';
-      }
-    }
-  }
 
   /**
    * Show success message

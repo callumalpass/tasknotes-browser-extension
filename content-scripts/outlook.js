@@ -5,6 +5,8 @@
 
 console.log('TaskNotes: Outlook content script loaded');
 
+// TaskCreationModal is now loaded via manifest.json
+
 /**
  * Initialize Outlook integration when page is ready
  */
@@ -97,7 +99,7 @@ function addTaskNotesButton() {
 function createButton() {
   const button = document.createElement('button');
   button.className = 'tasknotes-outlook-button';
-  button.innerHTML = `<img src="${chrome.runtime.getURL('icons/icon-16.png')}" alt="TaskNotes" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"> TaskNotes`;
+  button.innerHTML = `<img src="${chrome.runtime.getURL('icons/tasknotes-icon-16.png')}" alt="TaskNotes" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"> TaskNotes`;
   button.title = 'Add email to TaskNotes';
   button.style.cssText = `
     background: #0078d4;
@@ -198,34 +200,48 @@ function isViewingIndividualEmail() {
 }
 
 /**
- * Handle TaskNotes button click
+ * Handle TaskNotes button click using modal
  */
-function handleTaskNotesClick() {
+async function handleTaskNotesClick() {
   console.log('TaskNotes: Outlook button clicked');
   
   try {
     const emailData = extractOutlookEmailData();
     
-    if (emailData) {
-      // Send to background script
-      chrome.runtime.sendMessage({
-        action: 'createTask',
-        taskData: {
-          title: `Email: ${emailData.subject}`,
-          notes: `From: ${emailData.sender}\nSubject: ${emailData.subject}\nURL: ${window.location.href}`,
-          tags: ['email', 'outlook'],
-          contexts: [emailData.sender]
-        }
-      }, (response) => {
-        if (response && response.success) {
-          showNotification('Task created successfully!', 'success');
-        } else {
-          showNotification('Failed to create task', 'error');
-        }
-      });
-    } else {
+    if (!emailData) {
       showNotification('Could not extract email data', 'error');
+      return;
     }
+
+    // TaskCreationModal should be available from manifest injection
+    if (typeof window.TaskCreationModal === 'undefined') {
+      throw new Error('TaskCreationModal not loaded by manifest');
+    }
+
+    // Prepare prefill data
+    const prefillData = {
+      title: `Email: ${emailData.subject}`,
+      details: `From: ${emailData.sender}\nSubject: ${emailData.subject}\nURL: ${window.location.href}\n\nCreated from Outlook`,
+      tags: ['email', 'outlook'],
+      contexts: emailData.sender ? [`@${emailData.sender.replace(/[<>]/g, '').trim()}`] : [],
+      status: 'open',
+      priority: 'normal'
+    };
+
+    // Create and show modal
+    const modal = new window.TaskCreationModal({
+      prefillData: prefillData,
+      onComplete: (taskData) => {
+        showNotification('Task created successfully!', 'success');
+        modal.destroy();
+      },
+      onCancel: () => {
+        modal.destroy();
+      }
+    });
+
+    await modal.show();
+
   } catch (error) {
     console.error('TaskNotes: Error creating task:', error);
     showNotification('Error creating task', 'error');

@@ -27,7 +27,7 @@
       "matches": [
         "https://mail.google.com/*"
       ],
-      "js": ["content-scripts/gmail.js"],
+      "js": ["src/task-creation-modal.js", "content-scripts/gmail.js"],
       "css": ["styles/gmail.css"],
       "run_at": "document_end"
     },
@@ -36,7 +36,7 @@
         "https://outlook.live.com/*",
         "https://outlook.office.com/*"
       ],
-      "js": ["content-scripts/outlook.js"],
+      "js": ["src/task-creation-modal.js", "content-scripts/outlook.js"],
       "css": ["styles/outlook.css"],
       "run_at": "document_end"
     }
@@ -62,7 +62,7 @@
   
   "web_accessible_resources": [
     {
-      "resources": ["images/*", "icons/*"],
+      "resources": ["images/*", "icons/*", "src/task-creation-modal.js"],
       "matches": ["https://*/*"]
     }
   ]

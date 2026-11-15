@@ -81,6 +81,17 @@ manifest (`scripts/manifest.mjs`). Store builds use the Chrome Web Store ID; dev
 and LAB builds carry a public key so they always load as
 `bpcblaeaghagohijhhghbbeniecjflhg`.
 
+### Releasing
+
+Bump the version in `package.json` (and `package-lock.json`), merge, then push a tag
+`v<version>` from `main`. The release workflow checks and packages the build, creates a
+draft GitHub release with both zips, and uploads the Chrome zip to the Chrome Web Store
+and submits it for review; it goes live when review passes. The Firefox zip is attached
+to the release for manual submission.
+
+The Web Store step signs in to Google without a stored key: only `release.yml`, run for a
+`v*` tag in the `chrome-web-store` environment, may act as the publisher's service account.
+
 ### How it fits together
 
 - `src/popup/`: the capture popup (Preact).

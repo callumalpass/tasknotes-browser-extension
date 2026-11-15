@@ -6,11 +6,13 @@ on:
       - "v*"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -40,3 +42,51 @@ jobs:
             --draft \
             --title "TaskNotes browser extension $GITHUB_REF_NAME" \
             --generate-notes
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chrome-package
+          path: dist/tasknotes-chrome-*.zip
+          if-no-files-found: error
+
+  # Uploads the same zip to the Chrome Web Store and submits it for review; it goes
+  # live when review passes. Google trusts only this workflow, on v* tags, in the
+  # chrome-web-store environment (keyless: GitHub OIDC → Workload Identity).
+  chrome-web-store:
+    needs: release
+    runs-on: ubuntu-latest
+    environment: chrome-web-store
+    concurrency:
+      group: chrome-web-store
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: chrome-package
+          path: dist
+
+      - id: google
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093
+        with:
+          workload_identity_provider: ${{ vars.CWS_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.CWS_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/chromewebstore
+          create_credentials_file: false
+
+      - name: Upload and submit for review
+        env:
+          CWS_PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
+          CWS_ITEM_ID: ${{ vars.CWS_ITEM_ID }}
+          CWS_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node scripts/publish-webstore.mjs dist/tasknotes-chrome-*.zip

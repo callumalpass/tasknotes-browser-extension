@@ -1,0 +1,245 @@
+body {
+  width: 380px;
+  min-height: 200px;
+}
+
+/* Opened as a window (from the context menu, when the toolbar popup can't open). */
+@media (min-width: 400px) {
+  body {
+    width: auto;
+  }
+}
+
+.popup {
+  display: grid;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg) var(--space-lg);
+}
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: 0 calc(var(--space-xs) * -1) 0 0;
+}
+
+.popup-header img {
+  flex: none;
+  border-radius: 5px;
+}
+
+.popup-heading {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  flex: 1;
+  min-width: 0;
+}
+
+.destination {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--type-supporting);
+  color: var(--ink-muted);
+}
+
+.destination::before {
+  content: "→ ";
+}
+
+.capture {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.title-input {
+  width: 100%;
+  min-height: 64px;
+  max-height: 180px;
+  padding: var(--space-md);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--paper-raised);
+  font-size: var(--type-title);
+  line-height: 1.4;
+  resize: none;
+  field-sizing: content;
+}
+
+.title-input:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.title-input::placeholder {
+  color: var(--ink-muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: calc(var(--space-xs) * -1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chips:empty {
+  display: none;
+}
+
+.chip {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
+  font-size: var(--type-label);
+  font-weight: 600;
+  color: var(--ink-soft);
+  animation: chip-in var(--motion-enter) var(--ease-out);
+}
+
+.chip.date,
+.chip.project {
+  background: var(--accent-soft);
+  border-color: transparent;
+  color: var(--accent);
+}
+
+.chip.due {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+@keyframes chip-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+}
+
+.more {
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-sm);
+}
+
+.more summary {
+  cursor: pointer;
+  width: fit-content;
+  font-size: var(--type-supporting);
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.more-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.more-fields .span {
+  grid-column: 1 / -1;
+}
+
+.date-time {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-xs);
+}
+
+.field > .hint {
+  font-size: var(--type-label);
+  font-weight: 400;
+  color: var(--ink-muted);
+}
+
+.source {
+  display: grid;
+  gap: var(--space-sm);
+  margin: 0;
+  padding: var(--space-md);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--paper-soft);
+}
+
+.source-text {
+  display: grid;
+  min-width: 0;
+}
+
+.source-title {
+  font-size: var(--type-supporting);
+  font-weight: 600;
+}
+
+.source-detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--type-supporting);
+  color: var(--ink-muted);
+}
+
+.source-quote {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 2px;
+  padding-left: var(--space-sm);
+  border-left: 2px solid var(--line-strong);
+  font-size: var(--type-supporting);
+  color: var(--ink-soft);
+  white-space: pre-line;
+}
+
+.submit-row {
+  display: grid;
+}
+
+.attention,
+.saved {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-md);
+  padding: var(--space-xl) var(--space-md);
+  text-align: center;
+}
+
+.attention p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.saved h1 {
+  margin: 0;
+  font-size: var(--type-title);
+  overflow-wrap: anywhere;
+}
+
+.saved p {
+  margin: calc(var(--space-sm) * -1) 0 0;
+}
+
+.saved-mark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--success), transparent 86%);
+  color: var(--success);
+  animation: chip-in 240ms var(--ease-out);
+}
+
+.saved-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}

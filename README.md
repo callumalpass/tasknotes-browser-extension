@@ -1,161 +1,98 @@
-# TaskNotes Browser Extension
+# TaskNotes browser extension
 
-![image](images/2025-08-12_12-48-17.png)
+Capture tasks from any web page into [TaskNotes](https://tasknotes.dev/): your mdbase
+collection, or the Obsidian vault the TaskNotes plugin runs in.
 
-A browser extension that integrates TaskNotes with Gmail and other web pages, allowing you to create tasks directly from your browser.
+- **Quick add.** Click the toolbar button or press <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd>,
+  type a task the way you would in TaskNotes (`Reply to Sam tomorrow 3pm #work @email +Launch`),
+  and press <kbd>Enter</kbd>. Dates, tags, contexts, projects, priority and recurrence are
+  read as you type and shown before you save.
+- **From the page.** The task links back to the page it came from. GitHub issues and pull
+  requests, and Gmail and Outlook messages, suggest their own title; a short selection
+  becomes the title and a longer one is quoted in the task's notes.
+- **Right-click.** Add a task from selected text, a link or the page itself.
+- **Address bar.** Type `task`, a space, then the task, and press <kbd>Enter</kbd>.
+- **Drafts are kept.** If the popup closes before you save, what you typed is still there
+  when you open it again on the same page.
 
-## Features
+## Where tasks go
 
-- **Gmail Integration**: Add TaskNotes button directly to Gmail interface
-- **One-Click Task Creation**: Create tasks from emails with extracted metadata
-- **Right-Click Context Menu**: Add tasks from any webpage, selected text, or links
-- **Popup Interface**: Full-featured task creation and settings management
-- **Connection Status**: Real-time API connection monitoring
-- **Customizable Settings**: Configure API port, authentication, default tags
+Choose in the extension's settings (right-click the toolbar button → Options).
 
-## Prerequisites
+### mdbase (Chrome, Edge and other Chromium browsers)
 
-1. **TaskNotes Plugin**: Install and configure the TaskNotes plugin for Obsidian
-2. **HTTP API Enabled**: Enable the HTTP API in TaskNotes Settings → HTTP API tab
-3. **Desktop Only**: The TaskNotes API only works on desktop platforms
+Sign in to mdbase, pick a collection, and allow the extension to use it. Tasks are created
+in the collection's TaskNotes task type, named and filled in the same way the TaskNotes
+app does it, and they sync to every device. The collection must already be set up for
+TaskNotes: open it once in [the TaskNotes app](https://app.tasknotes.dev/) first.
 
-## Installation
+The extension asks mdbase only to read the collection (to learn its statuses, priorities
+and naming rules) and to create records.
 
-### From Chrome Web Store (Recommended)
+Firefox can't sign in to mdbase yet, so the Firefox build offers Obsidian only.
 
-Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/obsidian-tasknotes-web-ex/kcbplgbcleppckifepdciipecjhdmchh)
+### Obsidian
 
-Note that installing this way will receive updates more slowly while changes are approved in the Chrome Web Store. 
+Uses the HTTP API of the TaskNotes plugin on this computer. Obsidian must be running.
 
-### From GitHub releases
+1. In Obsidian, open **Settings → TaskNotes → Integrations → HTTP API**, turn it on and set
+   an API token. Note the port (8080 by default).
+2. In the extension's settings choose **Obsidian**, enter the port and token, and click
+   **Save and connect**.
 
-1. **Download**: Clone or download the [latest release](https://github.com/callumalpass/tasknotes-browser-extension/releases/latest) zip file
-2. **Unzip** the downloaded file
-3. Install
-   - Open Chrome and go to `chrome://extensions/`
-   - Enable "Developer mode" (toggle in top right)
-   - Click "Load unpacked"
-   - Select the `tasknotes-browser-extension` folder
-4. **Configure**: Click the extension icon and configure your API settings in TaskNotes
+Natural-language parsing, statuses, priorities, projects and templates come from the
+plugin, so tasks match ones you create in Obsidian.
 
-### Manual Installation (Developer Mode)
+## Install
 
-1. **Download**: Clone or download this repository
-2. **Build**: Run `npm install && npm run build` (optional - pre-built files included)
-3. **Install**:
-   - Open Chrome and go to `chrome://extensions/`
-   - Enable "Developer mode" (toggle in top right)
-   - Click "Load unpacked"
-   - Select the `tasknotes-browser-extension` folder
-4. **Configure**: Click the extension icon and configure your API settings in TaskNotes
+- Chrome Web Store: [TaskNotes](https://chromewebstore.google.com/detail/kcbplgbcleppckifepdciipecjhdmchh)
+- GitHub: download a zip from the [latest release](https://github.com/callumalpass/tasknotes-browser-extension/releases/latest),
+  unzip it, open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**
+  and pick the folder. In Firefox, open `about:debugging#/runtime/this-firefox` and load
+  `manifest.json` from the Firefox zip as a temporary add-on.
 
-## Setup
+Upgrading from version 1 keeps your Obsidian port, token and default tags. The buttons
+version 1 added inside Gmail, Outlook and GitHub are gone: open the popup on those pages
+instead, which fills in the subject or issue title.
 
-1. **Enable TaskNotes API**:
+## Development
 
-   - Open Obsidian with TaskNotes plugin installed
-   - Go to Settings → TaskNotes → HTTP API tab
-   - Enable "Enable HTTP API"
-   - Note the port number (default: 8080)
-   - Optionally set an authentication token
-   - Restart Obsidian
+Requires Node 22.
 
-2. **Configure Extension**:
+```sh
+npm install
+npm run build            # dist/chrome and dist/firefox
+npm run check            # typecheck, lint, tests and builds
+npm run package          # zips in dist/ for the stores and releases
+```
 
-   - Click the TaskNotes extension icon in Chrome
-   - Enter your API port (should match TaskNotes settings)
-   - Enter authentication token if you set one
-   - Set default tags and priority
-   - Click "Test Connection" to verify setup
+Load `dist/chrome` (or `dist/firefox/manifest.json`) unpacked to try a build.
 
-## Usage
+Build variants:
 
-### Gmail Integration
+| Command | Output | Use |
+| --- | --- | --- |
+| `npm run build` | `dist/chrome`, `dist/firefox` | Store builds against production mdbase |
+| `TASKNOTES_DEV_KEY=1 npm run build:chrome` | `dist/chrome-dev` | Unpacked Chrome build with a fixed ID, against production |
+| `MDBASE_ENV=lab npm run build:chrome` | `dist/chrome-lab` | Unpacked Chrome build against mdbase LAB |
 
-1. **Open Gmail** in your browser
-2. **Open any email**
-3. **Look for TaskNotes button** in the toolbar
-4. **Click the button** to create a task with email metadata
-5. **Task includes**: Subject, sender, email URL, and preview
+mdbase only accepts sign-in from extension IDs listed in the extension's mdbase app
+manifest (`scripts/manifest.mjs`). Store builds use the Chrome Web Store ID; development
+and LAB builds carry a public key so they always load as
+`bpcblaeaghagohijhhghbbeniecjflhg`.
 
-### Context Menu
+### How it fits together
 
-1. **Right-click** on any webpage
-2. **Select "Add to TaskNotes"** from context menu
-3. **Options available**:
-   - Add current page
-   - Add selected text
-   - Add clicked link
-   - Add email (on Gmail)
-
-### Extension Popup
-
-1. **Click extension icon** in Chrome toolbar
-2. **Create custom tasks** with title, priority, notes
-3. **Quick actions**: Add current page, view stats
-4. **Configure settings**: API port, auth token, defaults
-5. **Monitor connection** status
-
-## API Integration
-
-The extension communicates with your local TaskNotes API:
-
-- **Base URL**: `http://localhost:{PORT}/api`
-- **Authentication**: Optional Bearer token
-- **Endpoints Used**:
-  - `GET /api/health` - Connection testing
-  - `POST /api/tasks` - Task creation  
-  - `GET /api/stats` - Statistics display
-
-## Troubleshooting
-
-### Extension Not Working
-
-1. **Check TaskNotes API**:
-   - Ensure Obsidian is running
-   - Verify API is enabled in TaskNotes settings
-   - Test with `curl http://localhost:8080/api/health`
-
-2. **Check Extension Settings**:
-   - Verify correct port number
-   - Check authentication token if using one
-   - Test connection in extension popup
-
-3. **Browser Issues**:
-   - Refresh Gmail page
-   - Disable other extensions temporarily
-   - Check browser console for errors
-
-### Gmail Button Not Appearing
-
-1. **Refresh Gmail** page
-2. **Check URL**: Must be `https://mail.google.com/*`
-3. **Wait for load**: Gmail takes time to fully load
-4. **Check console**: Look for JavaScript errors
-
-### Connection Errors
-
-- **"Connection refused"**: TaskNotes API not running or wrong port
-- **"Unauthorized"**: Check authentication token
-- **"CORS error"**: API should automatically allow cross-origin requests
-
-
-### Adding New Email Providers
-
-To add support for new email providers:
-
-1. Create content script in `content-scripts/`
-2. Add CSS styles in `styles/`
-3. Update `manifest.json` with new URL patterns
-4. Add provider-specific extraction logic
-
-
-## Related Projects
-
-- **[TaskNotes Plugin](https://github.com/callumalpass/tasknotes)**: Main Obsidian plugin
-- **[TaskNotes Documentation](https://callumalpass.github.io/tasknotes/)**: Full documentation
+- `src/popup/`: the capture popup (Preact).
+- `src/options/`: settings, including mdbase sign-in and collection choice.
+- `src/background.ts`: the service worker: context menus, the `task` address-bar keyword
+  and notifications.
+- `src/backends/obsidian.ts`: the TaskNotes plugin's HTTP API.
+- `src/backends/mdbase/`: mdbase. The SDK runs its worker in an offscreen document
+  (`offscreen.html`), which the service worker opens on demand and every extension page
+  shares. `tasks.ts` and `task-path.ts` create tasks by the collection's TaskNotes rules,
+  using `@tasknotes/model` and `tasknotes-nlp-core`.
 
 ## License
 
-This project is licensed under the MIT License.
-
+MIT

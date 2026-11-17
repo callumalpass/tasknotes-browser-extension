@@ -22,8 +22,8 @@
     "check": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {
-    "@mdbase-dev/sdk": "0.1.0",
-    "@mdbase-dev/sdk-lab": "file:vendor/mdbase-dev-sdk-lab-0.1.0.tgz",
+    "@mdbase-dev/sdk": "0.1.1",
+    "@mdbase-dev/sdk-lab": "file:vendor/mdbase-dev-sdk-lab-0.1.1.tgz",
     "@tasknotes/model": "0.3.0",
     "preact": "10.29.8",
     "tasknotes-nlp-core": "file:vendor/tasknotes-nlp-core-0.3.0-abe88d9.tgz"
